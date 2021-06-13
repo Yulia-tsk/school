@@ -36,10 +36,14 @@ class AddStudentForm extends Component {
                     }}
                     onSubmit={(student, { setSubmitting }) => {
                         addNewStudent(student).then(() => {
-                          this.props.onSuccess();
+                          this.props.onSuccess();                         
+                        })
+                        .catch(err => {
+                          this.props.onFailure(err);
+                        })
+                        .finally(() => {
                           setSubmitting(false);
                         })
-                        
                       }}>
                     {({
                       values,

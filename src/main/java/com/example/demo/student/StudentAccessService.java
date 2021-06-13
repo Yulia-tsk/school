@@ -5,19 +5,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
-import java.sql.ResultSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 @Repository
 public class StudentAccessService {
 
+
+@Autowired
     private final JdbcTemplate jdbcTemplate;
-    private final ResultSet resultSet;
+
 
     @Autowired
-    public StudentAccessService(JdbcTemplate jdbcTemplate, ResultSet resultSet) {
+    public StudentAccessService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.resultSet = resultSet;
+
     }
 
      List<Student> selectAllStudents(){
@@ -52,7 +54,7 @@ public class StudentAccessService {
     public int insertStudent(UUID studentId, Student student) {
         String sql =  "" +
          "INSERT INTO student (" + " student_id, " + " first_name, " +" last_name, " +" email, " +" gender) " +
-                "VALUES (?, ?, ?, ?, ?);" ;
+                "VALUES (?, ?, ?, ?, ?::gender);" ;
        return jdbcTemplate.update(
                 sql,
                 studentId,
@@ -76,4 +78,48 @@ public class StudentAccessService {
         );
 
     }
+
+
+    public List<StudentCourse> selectAllStudentCourses(UUID studentId) {
+
+        String sql = "" +
+                "SELECT " +
+                " student.student_id," +
+                " course.course_id," +
+                " course.course_name," +
+                " course.description," +
+                " course.department," +
+                " course.teacher_name," +
+                " student_course.start_date," +
+                " student_course.end_date," +
+                " student_course.grade" +
+                " FROM student" +
+                " JOIN student_course USING (student_id) " +
+                " JOIN course USING course_id" +
+                " WHERE student.student_id = ?;";
+
+        return jdbcTemplate.query(
+                sql,
+                new Object[] {studentId},
+                mapStudentCourseFromDB()
+        );
+    }
+
+    private RowMapper<StudentCourse> mapStudentCourseFromDB() {
+        return (resultSet, i) ->
+                new StudentCourse(
+                        UUID.fromString(resultSet.getString("student_id")),
+                                UUID.fromString(resultSet.getString("course_id")),
+                                        resultSet.getString("course_name"),
+                                        resultSet.getString("description"),
+                                        resultSet.getString("department"),
+                                        resultSet.getString("teacher_name"),
+                                        resultSet.getDate("start_date").toLocalDate(),
+                                        resultSet.getDate("end_date").toLocalDate(),
+                                Optional.ofNullable(resultSet.getString("grade"))
+                                        .map(Integer::parseInt)
+                                .orElse(null)
+                );
+    }
 }
+

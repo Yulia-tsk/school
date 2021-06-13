@@ -20,3 +20,4 @@ export const addNewStudent = student =>
         method: 'POST',
         body: JSON.stringify(student)
     }).then(checkStatus);
+    export const checkStatus;
